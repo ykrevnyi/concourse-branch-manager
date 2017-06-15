@@ -7,16 +7,17 @@ module Cbm
   class PipelineGenerator
     include Logger
     attr_reader :git_uri, :branches, :resource_template_file, :job_template_file
-    attr_reader :common_resource_template_file, :group_per_branch, :resource_type_template_file
+    attr_reader :common_resource_template_file, :common_jobs_template_file, :group_per_branch, :resource_type_template_file
 
     # TODO: do http://www.refactoring.com/catalog/introduceParameterObject.html
     # rubocop:disable Metrics/LineLength, Metrics/ParameterLists
-    def initialize(git_uri, branches, resource_template_file, job_template_file, common_resource_template_file, resource_type_template_file, group_per_branch)
+    def initialize(git_uri, branches, resource_template_file, job_template_file, common_resource_template_file, common_jobs_template_file, resource_type_template_file, group_per_branch)
       @git_uri = git_uri
       @branches = branches
       @resource_template_file = resource_template_file
       @job_template_file = job_template_file
       @common_resource_template_file = common_resource_template_file
+      @common_jobs_template_file = common_jobs_template_file
       @resource_type_template_file = resource_type_template_file
       @group_per_branch = group_per_branch
     end
@@ -46,6 +47,11 @@ module Cbm
         common_resource_template_file
       )
 
+      common_jobs_entries = create_common_entries_from_template(
+        binding_class,
+        common_jobs_template_file
+      )
+
       resource_type_entries = create_resource_types_from_template(
         binding_class,
         resource_type_template_file
@@ -53,7 +59,7 @@ module Cbm
 
       groups, job_entries = create_groups_and_jobs_entries(binding_class)
 
-      create_complete_yaml(groups, resource_entries, common_resource_entries, job_entries, resource_type_entries)
+      create_complete_yaml(groups, resource_entries, common_resource_entries, common_jobs_entries, job_entries, resource_type_entries)
     end
 
     def create_groups_and_jobs_entries(binding_class)
@@ -71,7 +77,7 @@ module Cbm
       [groups, job_entries]
     end
 
-    def create_complete_yaml(groups, resource_entries, common_resource_entries, job_entries, resource_type_entries)
+    def create_complete_yaml(groups, resource_entries, common_resource_entries, common_jobs_entries, job_entries, resource_type_entries)
       "---\n" \
         "#{groups}" \
         "resources:\n" \
@@ -79,6 +85,7 @@ module Cbm
         "#{common_resource_entries}\n" \
         "jobs:\n" \
         "#{job_entries}\n" \
+        "#{common_jobs_entries}\n" \
         "resource_types:\n" \
         "#{resource_type_entries}\n"
     end
